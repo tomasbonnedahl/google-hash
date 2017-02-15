@@ -1,14 +1,19 @@
 import heapq
 
 import numpy as np
+import time
 
-from utils import possible_slices
+from utils import possible_slices, PrioHandler, write_to_file
+
+EXAMPLE = "example.in"
+SMALL = "small.in"
+
+INPUT_FILE = EXAMPLE
+
 
 """
 TODO
 - Python3 for caching
-- Hard-coded number of ingredients
-- Maximum size of a slice is hard-coded
 - Check if generated coordinates is non-zero on pizza before
     creating a slice (possibly pre-mature optimisation)
 """
@@ -20,7 +25,7 @@ TODO
 2 = Tomato
 """
 
-f_in = open('example.in', 'r')
+f_in = open(INPUT_FILE, 'r')
 total_rows, total_cols, min_ing_per_slice, max_cells_per_slice = map(int, f_in.readline().rstrip().split())
 
 pizza = np.ones((total_rows, total_cols), dtype=int)
@@ -31,66 +36,63 @@ for row_index, line in enumerate(f_in):
             pizza[row_index][col_index] = 2
 
 
-initial_state = (pizza.copy(), [])
+initial_state = (pizza, [])
 
 states = []
 initial_prio = 100000
 heapq.heappush(states, (initial_prio, initial_state))
 
-used_prios = set()
-used_prios.add(initial_prio)
+prio_handler = PrioHandler(max_cells_per_slice, init_prio=initial_prio)
 
 slice_hashes_visited = set()
 
 finished_work = []
 
-c = 0
-while states and c < 10000:
-    old_prio, current_state = heapq.heappop(states)
-    current_pizza, current_slices = current_state
+start_time = time.time()
 
-    # If no possible slices found, consider this path to be solved
-    slices_found = False
+try:
+    while states:
+        old_prio, current_state = heapq.heappop(states)
+        current_pizza, current_slices = current_state
 
-    for updated_pizza, (r_start, c_start), (r_finish, c_finish), slice_size in possible_slices(current_pizza,
-                                                                                               max_cells_per_slice,
-                                                                                               min_ing_per_slice):
-        slices_found = True
+        # If no possible slices found, consider this path to be solved
+        slices_found = False
 
-        # Add the coordinates for the slice
-        slices_coords = current_slices[:]
-        slices_coords.append((r_start, c_start, r_finish, c_finish))
+        for updated_pizza, (r_start, c_start), (r_finish, c_finish), slice_size in possible_slices(current_pizza,
+                                                                                                   max_cells_per_slice,
+                                                                                                   min_ing_per_slice):
+            slices_found = True
 
-        slices_hashed = hash(tuple(sorted(slices_coords)))
-        if slices_hashed not in slice_hashes_visited:
-            # Calculate a new prio depending on the slices (the bigger the better)
-            new_prio = old_prio - round(slice_size*100.0/max_cells_per_slice)
-            while new_prio in used_prios:
-                new_prio -= 1
-            used_prios.add(new_prio)
+            # Add the coordinates for the slice
+            slices_coords = current_slices[:]
+            slices_coords.append((r_start, c_start, r_finish, c_finish))
 
-            slice_hashes_visited.add(slices_hashed)
+            slices_hashed = hash(tuple(sorted(slices_coords)))
+            if slices_hashed not in slice_hashes_visited:
+                new_prio = prio_handler.get_new_prio(old_prio, slice_size)
 
-            # Add the updated pizza to the queue with a new (unique) priority
-            heapq.heappush(states, (new_prio, (updated_pizza, slices_coords)))
+                slice_hashes_visited.add(slices_hashed)
 
-    if not slices_found:
-        # Consider doing this outside later on to speed up the actual finding?
-        if not finished_work:
-            finished_work.append((current_pizza, current_slices))
-        else:
-            finished_pizza, finished_slices = finished_work[0]
-            if np.count_nonzero(current_pizza) < np.count_nonzero(finished_pizza):
-                finished_work[0] = (current_pizza, current_slices)
+                # Add the updated pizza to the queue with a new (unique) priority
+                heapq.heappush(states, (new_prio, (updated_pizza, slices_coords)))
 
-    c += 1
+        if not slices_found:
+            # Consider doing this outside later on to speed up the actual finding?
+            if not finished_work:
+                finished_work.append((current_pizza, current_slices))
+            else:
+                finished_pizza, finished_slices = finished_work[0]
+                if np.count_nonzero(current_pizza) < np.count_nonzero(finished_pizza):
+                    finished_work[0] = (current_pizza, current_slices)
 
-print 'Solutions found', len(finished_work)
-for p, s in finished_work:
-    print np.count_nonzero(p)
-    print 'SUCESS'
-    print 'pizza'
-    print p
-    print 'slices', s  # TODO: When writing to file, what index is the end one? Numpy or "normal"?
+except KeyboardInterrupt:
+    pass
+
+finally:
+    for solution_pizza, solution_slices in finished_work:
+        print 'SUCESS'
+        print solution_pizza
+        write_to_file(INPUT_FILE, solution_slices)
+
     print
-
+    print 'Took {} second'.format(time.time()-start_time)

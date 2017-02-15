@@ -1,5 +1,24 @@
+import datetime
 import numpy as np
 import itertools
+
+class PrioHandler(object):
+    """
+    This mess is needed as unique prios are required since the same prio will lead
+    to comparing the second object which is the numpy array, which cannot be __cmp__.
+    """
+    def __init__(self, max_cells_per_slice, init_prio):
+        self.max_cells_per_slice = max_cells_per_slice
+        self.used_prios = set()
+        self.used_prios.add(init_prio)
+
+    def get_new_prio(self, old_prio, slice_size):
+        # Calculate a new prio depending on the slices (the bigger the better)
+        new_prio = old_prio - round(slice_size * 100.0 / self.max_cells_per_slice)
+        while new_prio in self.used_prios:
+            new_prio -= 1
+        self.used_prios.add(new_prio)
+        return new_prio
 
 
 def get_all_coord_combinations(rows, cols):
@@ -34,7 +53,9 @@ def possible_slices(pizza, max_size_of_slice, min_ing_per_slice):
 
 def slice_within_ingredient_interval(slice, min_ing_per_slice):
     slice_sum = np.sum(slice)
-    return slice.size + min_ing_per_slice <= slice_sum <= 2 * slice.size - min_ing_per_slice # Tomato has value 2
+
+    # Tomato has value 2
+    return slice.size + min_ing_per_slice <= slice_sum <= 2 * slice.size - min_ing_per_slice
 
 
 def validate_slice(slice, max_size_of_slice, min_ing_per_slice):
@@ -50,25 +71,10 @@ def validate_slice(slice, max_size_of_slice, min_ing_per_slice):
 
     return True
 
-"""
-Each slice to have 2 of the ing
-A slice with size 4 should have 2T and 2M -> 2*1 + 2*2 = 6
-If it only has 4T -> 4*1 = 4 < slice.size
-
-If one ing per slice
-Slice is 2 -> Must be between 3 and 3 (not 2 or 4)
-Slice is 4 -> Must be between 5 and 7 (not 4 or 8)
-
-If two ing per slice
-Slice is 4 -> Must be between 6 and 6 (not 5 or 7)
-Slice (size) is 6 -> Must be between 8 and 10 (not 7 or 11)
-
-ing_per_slice + 2*ing_per_slice <= slice_size < only T's
-
-
-x = minimum sum it can have is its size (only 1s)
-x + minim_ing*2 <= sum
-
-
-
-"""
+def write_to_file(input_file_name, solution_slices):
+    t = datetime.datetime.now().strftime('%Y-%m-%d-%H%M%S')
+    output_file_name = input_file_name.split('.')[0] + "-" + t + ".out"
+    with open(output_file_name, 'w') as f:
+        f.write('{}\n'.format(len(solution_slices)))
+        for (r_start, c_start, r_finish, c_finish) in solution_slices:
+            f.write('{} {} {} {}\n'.format(r_start, c_start, r_finish-1, c_finish-1))
