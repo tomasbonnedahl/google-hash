@@ -7,9 +7,6 @@ from utils import possible_slices
 """
 TODO
 - Python3 for caching
-- Separate generation of coordinates and validation of slices
-- Unnecessary to yield when receiving a list
-- Priority in queue (use previous prio and mutiply slice ratio?)
 - Hard-coded number of ingredients
 - Maximum size of a slice is hard-coded
 - Check if generated coordinates is non-zero on pizza before
@@ -24,7 +21,7 @@ TODO
 """
 
 f_in = open('example.in', 'r')
-total_rows, total_cols, ing_per_slice, max_cells_per_slice = map(int, f_in.readline().rstrip().split())
+total_rows, total_cols, min_ing_per_slice, max_cells_per_slice = map(int, f_in.readline().rstrip().split())
 
 pizza = np.ones((total_rows, total_cols), dtype=int)
 
@@ -55,7 +52,9 @@ while states and c < 10000:
     # If no possible slices found, consider this path to be solved
     slices_found = False
 
-    for updated_pizza, (r_start, c_start), (r_finish, c_finish), slice_size in possible_slices(current_pizza):
+    for updated_pizza, (r_start, c_start), (r_finish, c_finish), slice_size in possible_slices(current_pizza,
+                                                                                               max_cells_per_slice,
+                                                                                               min_ing_per_slice):
         slices_found = True
 
         # Add the coordinates for the slice
