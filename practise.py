@@ -58,9 +58,10 @@ try:
         # If no possible slices found, consider this path to be solved
         slices_found = False
 
-        for updated_pizza, (r_start, c_start), (r_finish, c_finish), slice_size in possible_slices(current_pizza,
-                                                                                                   max_cells_per_slice,
-                                                                                                   min_ing_per_slice):
+        for _possible_slice in possible_slices(current_pizza,
+                                               max_cells_per_slice,
+                                               min_ing_per_slice):
+            updated_pizza, (r_start, c_start), (r_finish, c_finish), slice_size = _possible_slice
             slices_found = True
 
             # Add the coordinates for the slice
