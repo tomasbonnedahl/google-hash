@@ -3,6 +3,8 @@ import itertools
 
 import functools
 
+from utils import create_coords_medium
+
 ROWS = 3
 COLS = 5
 
@@ -16,25 +18,17 @@ for x in xrange(1, 4):
 # print 'upper left corner:'
 # print pizza[0:2,0:2] # Upper left corner, 2x2
 
-print 'whole:'
-print pizza[0:pizza.shape[0], 0:pizza.shape[1]]
-pizza[0:3, 0:2] = 0
-print pizza
+# a = np.arange(225).reshape(15, 15)
+a = np.arange(100).reshape(10, 10)
+print a
 
-l = [2,3,1]
-l += [4]
-print l
-s = sorted(l)
-print 's', s
-t = tuple(s)
-print 't', t
-h = hash(t)
-print 'h', h
-
-# t = (('asf'), 123)
-# t = t + (1,)
-#
-# print 't', t
-# # s = sorted(t)
-# # print 'sort', s, type(s)
-# print hash(t)
+l = []
+# for coords in create_coords_medium(a, 12, 4):
+for coords in create_coords_medium(a, max_size_of_slice=12, min_ing_per_slice=4):
+    l.append(coords)
+print 'len', len(l)
+for c in l:
+    print c
+    start_row, start_col, end_row, end_col = c
+    print a[start_row:end_row, start_col:end_col]
+    print
