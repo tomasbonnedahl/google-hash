@@ -1,6 +1,6 @@
 import datetime
 import numpy as np
-import itertools
+
 
 class PrioHandler(object):
     """
@@ -21,34 +21,58 @@ class PrioHandler(object):
         return new_prio
 
 
-def get_all_coord_combinations(rows, cols):
-    coords = []
-    for r in [row for row in xrange(rows+1)]:
-        for c in [col for col in xrange(cols+1)]:
-            coords.append((r, c))
-    return list(itertools.combinations(coords, 2))
+class PizzaHandler(object):
+    def __init__(self, header):
+        self.total_rows, self.total_cols, self.min_ing_per_slice, self.max_cells_per_slice = map(int, header)
+
+    def add_pizza(self, pizza):
+        self.pizza = pizza
 
 
-def possible_slices(pizza, max_size_of_slice, min_ing_per_slice):
-    coord_combos = get_all_coord_combinations(pizza.shape[0], pizza.shape[1])
+def partition_pizza(big_ph):
+    ph_list = []
 
-    for coord in coord_combos:
-        start, finish = coord
-        r_start, c_start = start
-        r_finish, c_finish = finish
+    for i in xrange(0, 200, 20):
+        for j in xrange(0, 250, 25):
+            ph = PizzaHandler([20, 25, big_ph.min_ing_per_slice, big_ph.max_cells_per_slice])
 
-        if r_start >= r_finish or c_start >= c_finish:
-            continue
+            new_pizza = big_ph.pizza[i:i + ph.total_rows, j:j + ph.total_cols].copy()
+            ph.add_pizza(new_pizza)
 
-        a_slice = pizza[r_start:r_finish, c_start:c_finish]
-        if not validate_slice(a_slice, max_size_of_slice, min_ing_per_slice):
-            continue
+            ph.start_row = i
+            ph.start_col = j
+            ph_list.append(ph)
 
-        # Update the pizza with the new slice
-        updated_pizza = pizza.copy()
-        updated_pizza[r_start:r_finish, c_start:c_finish] = 0
+    return ph_list
 
-        yield (updated_pizza, start, finish, a_slice.size)
+
+def unpack_solutions_and_write_file(solutions):
+    slices = []
+    for ph, solution in solutions:
+        _, solution_slices = solution
+        for slice in solution_slices:
+            start_row, start_col, end_row, end_col = slice
+            start_row += ph.start_row
+            start_col += ph.start_col
+            end_row += ph.start_row
+            end_col += ph.start_col
+            slices.append((start_row, start_col, end_row, end_col))
+
+    write_solution_to_file(slices)
+
+
+def make_pizza_from_file(input_file):
+    f_in = open(input_file, 'r')
+    header = map(int, f_in.readline().rstrip().split())
+    ph = PizzaHandler(header)
+
+    pizza = np.ones((ph.total_rows, ph.total_cols), dtype=int)
+    for row_index, line in enumerate(f_in):
+        for col_index, ingredient in enumerate(line.rstrip()):
+            if ingredient == 'T':
+                pizza[row_index][col_index] = 2
+    ph.add_pizza(pizza)
+    return ph
 
 
 def create_coords_medium(ph):
@@ -156,24 +180,7 @@ def slice_within_ingredient_interval(slice, min_ing_per_slice):
     return slice.size + min_ing_per_slice <= slice_sum <= 2 * slice.size - min_ing_per_slice
 
 
-def validate_slice(slice, max_size_of_slice, min_ing_per_slice):
-    # TODO: Remove
-    slice_size = slice.size
-    if slice_size < 1 or slice_size > max_size_of_slice:
-        return False
-
-    if not slice.all():
-        # Checks that we are not slicing an already sliced part - elements cannot be zero
-        return False
-
-    if not slice_within_ingredient_interval(slice, min_ing_per_slice=min_ing_per_slice):
-        return False
-
-    return True
-
-
 def validate_slice_medium(slice, max_size_of_slice, min_ing_per_slice):
-    # TODO: Remove check against size
     slice_size = slice.size
     if slice_size < min_ing_per_slice*2 or slice_size > max_size_of_slice:
         return False
@@ -188,10 +195,16 @@ def validate_slice_medium(slice, max_size_of_slice, min_ing_per_slice):
     return True
 
 
-def write_to_file(input_file_name, solution_slices):
+def write_solution_to_file(slices):
     t = datetime.datetime.now().strftime('%Y-%m-%d-%H%M%S')
-    output_file_name = input_file_name.split('.')[0] + "-" + t + ".out"
+    # output_file_name = input_file_name.split('.')[0] + "-" + t + ".out"
+    output_file_name = "medium-" + t + ".out"
     with open(output_file_name, 'w') as f:
-        f.write('{}\n'.format(len(solution_slices)))
-        for (r_start, c_start, r_finish, c_finish) in solution_slices:
-            f.write('{} {} {} {}\n'.format(r_start, c_start, r_finish-1, c_finish-1))
+        f.write('{}\n'.format(len(slices)))
+        write_slices_to_file(f, slices)
+    print
+    print 'Solution written to:', output_file_name
+
+def write_slices_to_file(f, solution_slices):
+    for (r_start, c_start, r_finish, c_finish) in solution_slices:
+        f.write('{} {} {} {}\n'.format(r_start, c_start, r_finish - 1, c_finish - 1))

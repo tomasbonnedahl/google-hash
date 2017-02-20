@@ -20,15 +20,11 @@ for x in xrange(1, 4):
 
 # a = np.arange(225).reshape(15, 15)
 a = np.arange(100).reshape(10, 10)
-print a
+# print a
 
-l = []
-# for coords in create_coords_medium(a, 12, 4):
-for coords in create_coords_medium(a, max_size_of_slice=12, min_ing_per_slice=4):
-    l.append(coords)
-print 'len', len(l)
-for c in l:
-    print c
-    start_row, start_col, end_row, end_col = c
-    print a[start_row:end_row, start_col:end_col]
-    print
+print a[0:5, 0:5]
+print a[0:5, 5:]
+
+t = (1, 2, 3)
+a, b, c = map(lambda x: x+1, t)
+print 'c', c
