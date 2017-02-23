@@ -3,7 +3,7 @@ import heapq
 import numpy as np
 import time
 
-from qualify_utils import read_file
+from real_utils import read_file
 
 EXAMPLE = "example.in"
 SMALL = "small.in"
