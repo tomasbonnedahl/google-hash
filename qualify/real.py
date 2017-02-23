@@ -60,18 +60,15 @@ class AlgoBase(object):
         while states and counter < self.max_iter:
             current_prio, current_state = heapq.heappop(states)
 
-            # print 'curr state', current_state
-
-            available_size = 100000
+            available_size = self.cache_size
             for cs_id, videos in current_state.items():
                 space_taken = 0
                 for video in videos:
                     space_taken += self.size_by_video[video]
-                if self.cache_size - space_taken < available_size:
+                if (self.cache_size - space_taken) < available_size:
                     available_size = self.cache_size - space_taken
 
             if available_size < self.smallest_video:
-                # print 'SOLVED', current_state
                 self.solutions[current_prio] = current_state
 
             for move in moves:
@@ -80,11 +77,6 @@ class AlgoBase(object):
                     updated_state = self._get_updated_state(current_state, move)
                     heapq.heappush(states, (new_prio, updated_state))
 
-        #     if solved:
-        #         if self._first_solution() or self._better_solution(current_state):
-        #             print 'Adding better solution, counter:', counter
-        #             self._add_solution(current_state)
-        #
             counter += 1
 
 
@@ -155,7 +147,7 @@ class VideoProblem(AlgoBase):
 start_time = time.time()
 
 ep_by_ep_id, size_by_video, cs_ids, cache_size, eps_by_cs = read_file(INPUT_FILE)
-video_problem = VideoProblem(ep_by_ep_id, size_by_video, cs_ids, cache_size, eps_by_cs, max_iter=1000)
+video_problem = VideoProblem(ep_by_ep_id, size_by_video, cs_ids, cache_size, eps_by_cs, max_iter=100)
 try:
     video_problem.run()
 except KeyboardInterrupt:
@@ -165,17 +157,7 @@ finally:
         print 'NO SOLUTIONS FOUND'
     else:
         time_saved, sol = sorted(video_problem.solutions.items())[0]
-        print sol
+        print 'Solution', sol, time_saved
         write_solution_to_file(sol)
-
-# ph_list = []
-# solutions = []
-# for index, ph in enumerate(ph_list):
-#     # runner = PizzaRunner(ph, max_iter=50)
-#     print('Running partition {}...').format(index+1)
-#     # runner.run()
-#     # solutions.append((ph, runner.solution()))
-# unpack_solutions_and_write_file(solutions)
-
 print
 print 'Took {} second'.format(time.time() - start_time)
