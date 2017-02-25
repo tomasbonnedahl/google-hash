@@ -61,7 +61,7 @@ def write_solution_to_file(solution):
 
 def write_cache_servers(f, solution):
     for cs_id, videos in solution.items():
-        l = [cs_id] + videos
+        l = [cs_id] + list(videos)
         l = map(str, l)
         row = " ".join(l)
         f.write('{}\n'.format(row))
